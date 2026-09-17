@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chitty Budget Management Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef1f8;
+    --bg-grad: radial-gradient(circle at 15% 0%, #ffffff 0%, #eaeef8 55%);
+    --surface: #ffffff;
+    --surface2: #f5f7fc;
+    --surface3: #eaeef7;
+    --border: #dde2f0;
+    --text: #131a2c;
+    --muted: #5b6685;
+    --muted2: #8891ab;
+    --accent: #2f5fe0;
+    --accent2: #0ea5c8;
+    --gold: #c9973a;
+    --green: #16a34a;
+    --warn: #d97706;
+    --danger: #dc2626;
+    --shadow: 0 8px 24px rgba(30,41,80,0.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-grad);
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 28px 32px 60px;
+    min-height: 100vh;
+  }
+  .mono { font-variant-numeric: tabular-nums; }
+  a { color: inherit; }
+
+  /* Header */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-mark {
+    width: 46px; height: 46px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; box-shadow: var(--shadow);
+    flex-shrink: 0;
+  }
+  header h1 { margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -0.01em; }
+  .subtitle { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .header-right { display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap; }
+  #today-display, #save-status {
+    color: var(--muted); font-size: 12.5px; text-align: right;
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: 8px;
+  }
+  #today-display .label, #save-status .label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted2); margin-bottom: 2px; }
+  #today-display .value, #save-status .value { color: var(--text); font-weight: 600; font-size: 13px; }
+  #save-status .value.ok { color: var(--green); }
+  #save-status .value.err { color: var(--danger); }
+  #file-link-status {
+    color: var(--muted); font-size: 12.5px; text-align: right;
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: 8px;
+  }
+  #file-link-status .label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted2); margin-bottom: 2px; }
+  #file-link-status .value { color: var(--text); font-weight: 600; font-size: 13px; }
+  #file-link-status .value.ok { color: var(--green); }
+  #file-link-status .value.warn { color: var(--warn); }
+  .backup-controls { display: flex; align-items: center; gap: 8px; }
+  .btn-chip.backup {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 8px 14px; font-size: 12px; border-radius: 8px; height: 100%;
+  }
+  .btn-chip.backup:hover { border-color: var(--accent); color: var(--accent); }
+  #backup-banner {
+    display: none;
+    background: rgba(217,119,6,0.10);
+    border: 1px solid rgba(217,119,6,0.35);
+    color: var(--warn);
+    font-size: 12.5px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+  }
+  #backup-banner.show { display: block; }
+  #backup-banner b { color: var(--text); }
+
+  /* Hero / KPI cards */
+  #summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0.9;
+  }
+  .card.gold::before { background: linear-gradient(90deg, var(--gold), #f0d69a); }
+  .card.danger::before { background: linear-gradient(90deg, var(--danger), #ff8fa3); }
+  .card-label { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .card-value { font-size: 23px; font-weight: 800; letter-spacing: -0.01em; }
+  .card-value.purple { color: var(--accent); }
+  .card-value.gold { color: var(--gold); }
+  .card-value.green { color: var(--green); }
+  .card-value.orange { color: var(--warn); }
+  .card-value.red { color: var(--danger); }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* Charts */
+  #charts-section {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+  }
+  .chart-card h3 { margin: 0 0 4px; font-size: 14px; font-weight: 700; }
+  .chart-card .chart-sub { font-size: 11.5px; color: var(--muted); margin-bottom: 14px; }
+  .chart-wrap { position: relative; height: 230px; }
+  @media (max-width: 880px) { #charts-section { grid-template-columns: 1fr; } }
+
+  button {
+    background: linear-gradient(135deg, var(--accent), #3d63d6);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button.secondary { background: var(--surface3); border: 1px solid var(--border); color: var(--text); }
+  button:hover { filter: brightness(1.12); }
+  button:active { transform: translateY(1px); }
+
+  .btn-chip {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-chip:hover { border-color: var(--accent); color: var(--accent2); }
+  .btn-chip.view { background: rgba(34,197,142,0.12); border-color: rgba(34,197,142,0.4); color: var(--green); }
+  .btn-chip.view:hover { color: var(--green); border-color: var(--green); }
+  .proof-cell { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 12px 12px 0 0;
+    padding: 6px 6px 0;
+  }
+  .tab {
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 11px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    border-radius: 8px 8px 0 0;
+    font-family: inherit;
+  }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active { color: var(--accent2); border-bottom-color: var(--accent2); background: var(--surface2); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .progress-label { font-size: 13px; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .progress-bar {
+    background: var(--surface2);
+    border-radius: 20px;
+    height: 9px;
+    overflow: hidden;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+  }
+  .progress-fill { background: linear-gradient(90deg, var(--green), #4ee0a8); height: 100%; border-radius: 20px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+  th, td { text-align: left; padding: 11px 14px; }
+  thead th {
+    background: var(--surface3);
+    color: var(--muted);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+  tbody tr { border-top: 1px solid var(--border); }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr.overdue { background: rgba(240,85,107,0.08); }
+  tbody tr.upcoming { background: rgba(234,179,8,0.08); }
+
+  .status-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    display: inline-block;
+  }
+  .status-badge.status-Paid { background: rgba(34,197,142,0.15); color: var(--green); }
+  .status-badge.status-Pending { background: rgba(234,179,8,0.15); color: var(--warn); }
+  .status-badge.status-Due { background: rgba(240,85,107,0.15); color: var(--danger); }
+
+  .status-select {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 5px 7px;
+    font-size: 12px;
+    font-family: inherit;
+  }
+
+  .table-wrap { overflow-x: auto; box-shadow: var(--shadow); border-radius: 0 0 12px 12px; }
+
+  /* Property grid */
+  #property-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .prop-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .prop-card h4 { margin: 0 0 10px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .prop-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .prop-row:last-child { border-bottom: none; }
+  .prop-name { color: var(--text); }
+  .prop-amount { font-weight: 700; }
+
+  /* Toasts */
+  #toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 999;
+  }
+  .toast {
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 11px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    box-shadow: 0 6px 20px rgba(30,41,80,0.18);
+    font-weight: 500;
+  }
+  .toast.success { border-color: var(--green); }
+  .toast.warn { border-color: var(--warn); }
+
+  footer {
+    margin-top: 32px;
+    text-align: center;
+    color: var(--muted2);
+    font-size: 11.5px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">💼</div>
+    <div>
+      <h1>Chitty Budget Management</h1>
+      <div class="subtitle">Consolidated savings & contribution tracker</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="today-display"><span class="label">Today</span><span class="value" id="today-value"></span></div>
+    <div id="save-status"><span class="label">Storage</span><span class="value" id="save-status-value">—</span></div>
+    <div id="file-link-status" style="display:none"><span class="label">Save File</span><span class="value" id="file-link-value">—</span></div>
+    <div class="backup-controls">
+      <button type="button" class="btn-chip backup" id="link-file-btn" onclick="handleLinkButtonClick()" title="Link a real file on your computer that updates automatically — bypasses browser storage entirely">🔗 Link Save File</button>
+      <button type="button" class="btn-chip backup" onclick="exportData()" title="Download a backup file of all your data">⬇ Backup</button>
+      <button type="button" class="btn-chip backup" onclick="document.getElementById('restore-input').click()" title="Restore data from a previously downloaded backup file">⬆ Restore</button>
+      <input type="file" id="restore-input" accept="application/json" style="display:none" onchange="importData(this)">
+    </div>
+  </div>
+</header>
+
+<div id="backup-banner"></div>
+
+<div id="summary-cards"></div>
+
+<div id="charts-section">
+  <div class="chart-card">
+    <h3>Contribution Progress by Chitty</h3>
+    <div class="chart-sub">Paid vs. remaining amount across active chitties</div>
+    <div class="chart-wrap"><canvas id="chart-progress"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <h3>Portfolio Allocation</h3>
+    <div class="chart-sub">Share of total amount paid to date</div>
+    <div class="chart-wrap"><canvas id="chart-allocation"></canvas></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('thomas')">Thomas Chitty</button>
+  <button class="tab" onclick="showTab('jeneesha')">Jeneesha Chitty</button>
+  <button class="tab" onclick="showTab('total')">Thomas & Jeneesha_Baby sheela</button>
+  <button class="tab" onclick="showTab('johnson26')">Johnson 2026-27</button>
+  <button class="tab" onclick="showTab('old-sheela')">Old Baby Sheela</button>
+  <button class="tab" onclick="showTab('old-johnson')">Old Johnson</button>
+  <button class="tab" onclick="showTab('property')">Property</button>
+</div>
+
+<div id="tab-thomas" class="tab-panel active">
+  <div id="prog-thomas"></div>
+  <div class="table-wrap"><table id="tbl-thomas"></table></div>
+</div>
+
+<div id="tab-jeneesha" class="tab-panel">
+  <div id="prog-jeneesha"></div>
+  <div class="table-wrap"><table id="tbl-jeneesha"></table></div>
+</div>
+
+<div id="tab-total" class="tab-panel">
+  <div class="table-wrap"><table id="tbl-total"></table></div>
+</div>
+
+<div id="tab-johnson26" class="tab-panel">
+  <div class="table-wrap"><table id="tbl-johnson26"></table></div>
+</div>
+
+<div id="tab-old-sheela" class="tab-panel">
+  <div class="table-wrap"><table id="tbl-old-sheela"></table></div>
+</div>
+
+<div id="tab-old-johnson" class="tab-panel">
+  <div class="table-wrap"><table id="tbl-old-johnson"></table></div>
+</div>
+
+<div id="tab-property" class="tab-panel">
+  <div id="property-grid"></div>
+</div>
+
+<footer>Chitty Budget Management Dashboard · Data stored locally in this browser — use ⬇ Backup regularly and ⬆ Restore to reload it on another device or after clearing browser data</footer>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const xlDate = n => {
+  const d = new Date((n - 25569) * 86400000);
+  return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+};
+const xlToDate = n => new Date((n - 25569) * 86400000);
+
+// State stored in localStorage
+const STORAGE_KEY = 'chitty_data_v3';
+let storageWorks = true;
+let state = loadState();
+
+function defaultState() {
+  return {
+    thomas: [
+      {no:1,date:46016,base:15500,interest:0,actual:15500,status:'Paid',proof:''},
+      {no:2,date:46047,base:16000,interest:0,actual:16000,status:'Paid',proof:''},
+      {no:3,date:46078,base:16500,interest:6000,actual:10500,status:'Paid',proof:''},
+      {no:4,date:46106,base:17000,interest:6000,actual:11000,status:'Paid',proof:''},
+      {no:5,date:46137,base:17500,interest:6000,actual:11500,status:'Paid',proof:''},
+      {no:6,date:46167,base:18000,interest:6000,actual:12000,status:'Paid',proof:''},
+      {no:7,date:46198,base:18500,interest:6000,actual:12500,status:'Pending',proof:''},
+      {no:8,date:46228,base:19000,interest:6000,actual:13000,status:'Pending',proof:''},
+      {no:9,date:46259,base:19500,interest:6000,actual:13500,status:'Pending',proof:''},
+      {no:10,date:46290,base:20000,interest:6000,actual:14000,status:'Pending',proof:''},
+      {no:11,date:46320,base:20500,interest:6000,actual:14500,status:'Pending',proof:''},
+      {no:12,date:46351,base:21000,interest:6000,actual:15000,status:'Pending',proof:''},
+      {no:13,date:46381,base:21500,interest:6000,actual:15500,status:'Pending',proof:''},
+      {no:14,date:46412,base:22000,interest:6000,actual:16000,status:'Pending',proof:''},
+      {no:15,date:46443,base:22500,interest:6000,actual:16500,status:'Pending',proof:''},
+      {no:16,date:46471,base:23000,interest:6000,actual:17000,status:'Pending',proof:''},
+      {no:17,date:46502,base:23500,interest:6000,actual:17500,status:'Pending',proof:''},
+      {no:18,date:46532,base:24000,interest:6000,actual:18000,status:'Pending',proof:''},
+      {no:19,date:46563,base:24500,interest:6000,actual:18500,status:'Pending',proof:''},
+      {no:20,date:46593,base:25000,interest:6000,actual:19000,status:'Pending',proof:''},
+    ],
+    jeneesha: [
+      {no:1,date:46016,base:15500,status:'Paid',proof:''},
+      {no:2,date:46047,base:16000,status:'Paid',proof:''},
+      {no:3,date:46078,base:16500,status:'Paid',proof:''},
+      {no:4,date:46106,base:17000,status:'Paid',proof:''},
+      {no:5,date:46137,base:17500,status:'Paid',proof:''},
+      {no:6,date:46167,base:18000,status:'Paid',proof:''},
+      {no:7,date:46198,base:18500,status:'Pending',proof:''},
+      {no:8,date:46228,base:19000,status:'Pending',proof:''},
+      {no:9,date:46259,base:19500,status:'Pending',proof:''},
+      {no:10,date:46290,base:20000,status:'Pending',proof:''},
+      {no:11,date:46320,base:20500,status:'Pending',proof:''},
+      {no:12,date:46351,base:21000,status:'Pending',proof:''},
+      {no:13,date:46381,base:21500,status:'Pending',proof:''},
+      {no:14,date:46412,base:22000,status:'Pending',proof:''},
+      {no:15,date:46443,base:22500,status:'Pending',proof:''},
+      {no:16,date:46471,base:23000,status:'Pending',proof:''},
+      {no:17,date:46502,base:23500,status:'Pending',proof:''},
+      {no:18,date:46532,base:24000,status:'Pending',proof:''},
+      {no:19,date:46563,base:24500,status:'Pending',proof:''},
+      {no:20,date:46593,base:25000,status:'Pending',proof:''},
+    ],
+    johnson26: [
+      {no:1,date:46188,payment:9600,status:'Paid',proof:''},
+      {no:2,date:46218,payment:9860,status:'Due',proof:''},
+      {no:3,date:46249,payment:10120,status:'Due',proof:''},
+      {no:4,date:46280,payment:10380,status:'Due',proof:''},
+      {no:5,date:46310,payment:10640,status:'Due',proof:''},
+      {no:6,date:46341,payment:10900,status:'Due',proof:''},
+      {no:7,date:46371,payment:11160,status:'Due',proof:''},
+      {no:8,date:46402,payment:11420,status:'Due',proof:''},
+      {no:9,date:46433,payment:11680,status:'Due',proof:''},
+      {no:10,date:46461,payment:11940,status:'Due',proof:''},
+      {no:11,date:46492,payment:12200,status:'Due',proof:''},
+      {no:12,date:46522,payment:12460,status:'Due',proof:''},
+      {no:13,date:46553,payment:12720,status:'Due',proof:''},
+      {no:14,date:46583,payment:12980,status:'Due',proof:''},
+      {no:15,date:46614,payment:13340,status:'Due',proof:''},
+    ]
+  };
+}
+
+function checkStorageAvailable() {
+  try {
+    const testKey = '__chitty_storage_test__';
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function loadState() {
+  storageWorks = checkStorageAvailable();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return defaultState();
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    setSaveStatus(true);
+  } catch (e) {
+    setSaveStatus(false);
+  }
+  if (linkedFileHandle) writeLinkedFile();
+}
+
+function setSaveStatus(ok) {
+  const el = document.getElementById('save-status-value');
+  const banner = document.getElementById('backup-banner');
+  if (!el) return;
+  if (ok) {
+    const t = new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+    el.textContent = `Saved ${t}`;
+    el.className = 'value ok';
+  } else {
+    el.textContent = 'Not saving!';
+    el.className = 'value err';
+  }
+  if (banner) {
+    if (!ok || !storageWorks) {
+      banner.className = 'show';
+      banner.innerHTML = `<b>⚠️ Your browser is not saving changes automatically.</b> This can happen if you're in a private/incognito window, or your browser clears local data on close.
+        Use the <b>⬇ Backup</b> button after making changes, and <b>⬆ Restore</b> that file next time you open this dashboard so nothing is lost.`;
+    } else {
+      banner.className = '';
+      banner.innerHTML = '';
+    }
+  }
+}
+
+// ============================================================
+// BACKUP / RESTORE (exports the exact same data to a JSON file
+// so it survives even if the browser clears local storage)
+// ============================================================
+function exportData() {
+  try {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `chitty_backup_${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('⬇ Backup downloaded — keep this file safe', 'success');
+  } catch (e) {
+    toast('⚠️ Could not create backup file', 'warn');
+  }
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!parsed || !parsed.thomas || !parsed.jeneesha || !parsed.johnson26) {
+        toast('⚠️ This file does not look like a valid Chitty backup', 'warn');
+        return;
+      }
+      state = parsed;
+      saveState();
+      renderAll();
+      toast('✅ Data restored from backup', 'success');
+    } catch (err) {
+      toast('⚠️ Could not read that backup file', 'warn');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ============================================================
+// LINK SAVE FILE (File System Access API)
+// Writes data straight to a real file on your computer, so
+// nothing is lost even if the browser clears storage on exit.
+// Falls back gracefully wherever this API isn't supported
+// (e.g. Firefox, Safari) — Backup/Restore still work everywhere.
+// ============================================================
+let linkedFileHandle = null;
+const FS_SUPPORTED = typeof window.showSaveFilePicker === 'function';
+
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') { reject(new Error('no idb')); return; }
+    const req = indexedDB.open('chitty_fs_db', 1);
+    req.onupgradeneeded = () => { try { req.result.createObjectStore('handles'); } catch(e) {} };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbSet(key, val) {
+  try {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('handles', 'readwrite');
+      tx.objectStore('handles').put(val, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) { /* ignore — link just won't survive a reload */ }
+}
+
+async function idbGet(key) {
+  try {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('handles', 'readonly');
+      const r = tx.objectStore('handles').get(key);
+      r.onsuccess = () => resolve(r.result || null);
+      r.onerror = () => reject(r.error);
+    });
+  } catch (e) { return null; }
+}
+
+function setFileLinkStatus(text, cls) {
+  const wrap = document.getElementById('file-link-status');
+  const val = document.getElementById('file-link-value');
+  if (!wrap || !val) return;
+  wrap.style.display = 'block';
+  val.textContent = text;
+  val.className = 'value' + (cls ? ' ' + cls : '');
+}
+
+async function linkSaveFile() {
+  if (!FS_SUPPORTED) {
+    toast('⚠️ Your browser doesn\'t support direct file saving — use Backup/Restore instead', 'warn');
+    return;
+  }
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: 'chitty_data.json',
+      types: [{ description: 'Chitty data file', accept: { 'application/json': ['.json'] } }]
+    });
+    const lowerName = handle.name.toLowerCase();
+    if (lowerName.endsWith('.html') || lowerName.endsWith('.htm')) {
+      toast('⚠️ Please choose a .json filename (like chitty_data.json), not the dashboard\'s own .html file — linking was cancelled to protect it', 'warn');
+      return;
+    }
+    linkedFileHandle = handle;
+    await idbSet('linked-file', handle);
+    await writeLinkedFile();
+    setFileLinkStatus(handle.name + ' (linked)', 'ok');
+    document.getElementById('link-file-btn').textContent = '🔗 Link Save File';
+    toast('🔗 Linked — every save now also writes to this file', 'success');
+  } catch (e) {
+    if (e && e.name !== 'AbortError') toast('⚠️ Could not link a file', 'warn');
+  }
+}
+
+function handleLinkButtonClick() {
+  if (linkedFileHandle) {
+    reconnectFile();
+  } else {
+    linkSaveFile();
+  }
+}
+
+async function reconnectFile() {
+  try {
+    const perm = await linkedFileHandle.requestPermission({ mode: 'readwrite' });
+    if (perm === 'granted') {
+      await writeLinkedFile();
+      document.getElementById('link-file-btn').textContent = '🔗 Link Save File';
+      toast('🔗 Reconnected to your save file', 'success');
+    } else {
+      toast('⚠️ Permission was not granted', 'warn');
+    }
+  } catch (e) {
+    toast('⚠️ Could not reconnect — try linking again', 'warn');
+    linkedFileHandle = null;
+    linkSaveFile();
+  }
+}
+
+async function writeLinkedFile() {
+  if (!linkedFileHandle) return;
+  try {
+    const perm = await linkedFileHandle.requestPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') { setFileLinkStatus('Reconnect needed', 'warn'); return; }
+    const writable = await linkedFileHandle.createWritable();
+    await writable.write(JSON.stringify(state, null, 2));
+    await writable.close();
+    setFileLinkStatus(linkedFileHandle.name + ' (linked)', 'ok');
+  } catch (e) {
+    setFileLinkStatus('Write failed — click Link again', 'warn');
+  }
+}
+
+async function tryRestoreLinkedFile() {
+  if (!FS_SUPPORTED) return;
+  try {
+    const handle = await idbGet('linked-file');
+    if (!handle) return;
+    linkedFileHandle = handle;
+    const perm = await handle.queryPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') {
+      setFileLinkStatus('Reconnect needed', 'warn');
+      document.getElementById('link-file-btn').textContent = '🔗 Reconnect Save File';
+      return;
+    }
+    const file = await handle.getFile();
+    const text = await file.text();
+    if (text.trim()) {
+      const parsed = JSON.parse(text);
+      if (parsed && parsed.thomas && parsed.jeneesha && parsed.johnson26) {
+        state = parsed;
+        renderAll();
+      }
+    }
+    setFileLinkStatus(handle.name + ' (linked)', 'ok');
+  } catch (e) { /* no linked file yet, or permission needs a click to restore */ }
+}
+
+
+// ============================================================
+function fmt(n) { return '₹' + n.toLocaleString('en-IN'); }
+
+function statusBadge(s) {
+  return `<span class="status-badge status-${s}">${s}</span>`;
+}
+
+function statusSelect(dataset, idx, currentStatus) {
+  return `<select class="status-select" onchange="updateStatus('${dataset}',${idx},this.value)">
+    <option${currentStatus==='Paid'?' selected':''}>Paid</option>
+    <option${currentStatus==='Pending'?' selected':''}>Pending</option>
+    <option${currentStatus==='Due'?' selected':''}>Due</option>
+  </select>`;
+}
+
+function proofCell(dataset, idx, record) {
+  const has = !!record.proof;
+  return `<div class="proof-cell">
+    <input type="file" accept="application/pdf" id="file-${dataset}-${idx}" style="display:none" onchange="attachProof('${dataset}',${idx},this)">
+    <button type="button" class="btn-chip" onclick="document.getElementById('file-${dataset}-${idx}').click()">${has?'📎 Replace':'📎 Attach PDF'}</button>
+    ${has?`<button type="button" class="btn-chip view" onclick="viewProof('${dataset}',${idx})">👁 View</button>`:''}
+  </div>`;
+}
+
+function attachProof(dataset, idx, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') { toast('⚠️ Please upload a PDF file only', 'warn'); return; }
+  if (file.size > 4 * 1024 * 1024) { toast('⚠️ File too large — please keep under 4MB', 'warn'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    getDataset(dataset)[idx].proof = e.target.result;
+    saveState();
+    renderAll();
+    toast('✅ Payment proof attached', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function viewProof(dataset, idx) {
+  const record = getDataset(dataset)[idx];
+  if (record && record.proof) {
+    const w = window.open();
+    w.document.write(`<title>Payment Proof — #${record.no}</title><iframe src="${record.proof}" style="width:100%;height:100vh;border:none"></iframe>`);
+  }
+}
+
+function getDataset(name) {
+  if (name === 'thomas') return state.thomas;
+  if (name === 'jeneesha') return state.jeneesha;
+  if (name === 'johnson26') return state.johnson26;
+  return [];
+}
+
+function daysUntil(xlD) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = xlToDate(xlD); d.setHours(0,0,0,0);
+  return Math.round((d - today) / 86400000);
+}
+
+function rowClass(row) {
+  const days = daysUntil(row.date);
+  if (row.status === 'Due' || row.status === 'Pending') {
+    if (days < 0) return 'overdue';
+    if (days <= 5) return 'upcoming';
+  }
+  return '';
+}
+
+function renderThomas() {
+  const rows = state.thomas;
+  const paid = rows.filter(r => r.status === 'Paid').length;
+  const totalPaid = rows.filter(r=>r.status==='Paid').reduce((s,r)=>s+r.actual,0);
+
+  document.getElementById('prog-thomas').innerHTML = `
+    <div class="progress-label"><span>${paid} of 20 installments paid</span><span>${fmt(totalPaid)} paid so far</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${paid/20*100}%"></div></div>`;
+
+  document.getElementById('tbl-thomas').innerHTML = `
+    <thead><tr>
+      <th>#</th><th>Due Date</th><th>Base Amount</th><th>Interest</th><th>Actual Payment</th><th>Status</th><th>Change Status</th><th>Proof of Payment</th>
+    </tr></thead>
+    <tbody>${rows.map((r,i) => `<tr class="${rowClass(r)}">
+      <td class="mono">${r.no}</td>
+      <td>${xlDate(r.date)}</td>
+      <td class="mono">${fmt(r.base)}</td>
+      <td class="mono">${r.interest ? fmt(r.interest) : '—'}</td>
+      <td class="mono" style="font-weight:700">${fmt(r.actual)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${statusSelect('thomas',i,r.status)}</td>
+      <td>${proofCell('thomas',i,r)}</td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderJeneesha() {
+  const rows = state.jeneesha;
+  const paid = rows.filter(r=>r.status==='Paid').length;
+  const totalPaid = rows.filter(r=>r.status==='Paid').reduce((s,r)=>s+r.base,0);
+
+  document.getElementById('prog-jeneesha').innerHTML = `
+    <div class="progress-label"><span>${paid} of 20 installments paid</span><span>${fmt(totalPaid)} paid so far</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${paid/20*100}%"></div></div>`;
+
+  document.getElementById('tbl-jeneesha').innerHTML = `
+    <thead><tr>
+      <th>#</th><th>Due Date</th><th>Payment</th><th>Status</th><th>Change Status</th><th>Proof of Payment</th>
+    </tr></thead>
+    <tbody>${rows.map((r,i) => `<tr class="${rowClass(r)}">
+      <td class="mono">${r.no}</td>
+      <td>${xlDate(r.date)}</td>
+      <td class="mono" style="font-weight:700">${fmt(r.base)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${statusSelect('jeneesha',i,r.status)}</td>
+      <td>${proofCell('jeneesha',i,r)}</td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderTotal() {
+  const t = state.thomas;
+  const j = state.jeneesha;
+  const rows = t.map((r,i) => ({
+    no: r.no, date: r.date,
+    jeneesha: j[i].base,
+    thomas: r.actual,
+    total: j[i].base + r.actual,
+    status: (r.status === 'Paid' && j[i].status === 'Paid') ? 'Paid' : (r.status === 'Due' || j[i].status === 'Due') ? 'Due' : 'Pending'
+  }));
+
+  document.getElementById('tbl-total').innerHTML = `
+    <thead><tr>
+      <th>#</th><th>Due Date</th><th>Jeneesha</th><th>Thomas</th><th>Total</th><th>Status</th>
+    </tr></thead>
+    <tbody>${rows.map(r => `<tr>
+      <td class="mono">${r.no}</td>
+      <td>${xlDate(r.date)}</td>
+      <td class="mono">${fmt(r.jeneesha)}</td>
+      <td class="mono">${fmt(r.thomas)}</td>
+      <td class="mono" style="font-weight:700;color:var(--accent)">${fmt(r.total)}</td>
+      <td>${statusBadge(r.status)}</td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderJohnson26() {
+  const rows = state.johnson26;
+  document.getElementById('tbl-johnson26').innerHTML = `
+    <thead><tr>
+      <th>#</th><th>Due Date</th><th>Payment (×2 = Total)</th><th>Total (4L)</th><th>Status</th><th>Change Status</th><th>Proof of Payment</th>
+    </tr></thead>
+    <tbody>${rows.map((r,i) => `<tr class="${rowClass(r)}">
+      <td class="mono">${r.no}</td>
+      <td>${xlDate(r.date)}</td>
+      <td class="mono">${fmt(r.payment)} × 2</td>
+      <td class="mono" style="font-weight:700">${fmt(r.payment*2)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${statusSelect('johnson26',i,r.status)}</td>
+      <td>${proofCell('johnson26',i,r)}</td>
+    </tr>`).join('')}</tbody>`;
+}
+
+function renderOldSheela() {
+  const rows = [
+    {no:1,date:45412,base:15500,interest:6000,actual:9500},{no:2,date:45443,base:16000,interest:6000,actual:10000},
+    {no:3,date:45473,base:16500,interest:6000,actual:10500},{no:4,date:45504,base:17000,interest:6000,actual:11000},
+    {no:5,date:45535,base:17500,interest:6000,actual:11500},{no:6,date:45565,base:18000,interest:6000,actual:12000},
+    {no:7,date:45596,base:18500,interest:6000,actual:12500},{no:8,date:45626,base:19000,interest:6000,actual:13000},
+    {no:9,date:45657,base:19500,interest:6000,actual:13500},{no:10,date:45688,base:20000,interest:6000,actual:14000},
+    {no:11,date:45716,base:20500,interest:6000,actual:14500},{no:12,date:45747,base:21000,interest:6000,actual:15000},
+    {no:13,date:45777,base:21500,interest:6000,actual:15500},{no:14,date:45808,base:22000,interest:6000,actual:16000},
+    {no:15,date:45838,base:22500,interest:6000,actual:16500},{no:16,date:45869,base:23000,interest:6000,actual:17000},
+    {no:17,date:45900,base:23500,interest:6000,actual:17500},{no:18,date:45930,base:24000,interest:6000,actual:18000},
+    {no:19,date:45961,base:24500,interest:6000,actual:18500},{no:20,date:45991,base:25000,interest:6000,actual:19000},
+  ];
+  document.getElementById('tbl-old-sheela').innerHTML = `
+    <thead><tr><th>#</th><th>Month</th><th>Payment</th><th>Interest (deducted)</th><th>Actual Paid</th><th>Status</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td class="mono">${r.no}</td><td>${xlDate(r.date)}</td>
+      <td class="mono">${fmt(r.base)}</td><td class="mono">${fmt(r.interest)}</td>
+      <td class="mono">${fmt(r.actual)}</td><td>${statusBadge('Paid')}</td>
+    </tr>`).join('')}
+    <tr style="background:var(--surface2)"><td colspan="4" style="font-weight:700">Processing Fees</td><td class="mono" style="font-weight:700">₹12,500</td><td></td></tr>
+    </tbody>`;
+}
+
+function renderOldJohnson() {
+  const rows = [
+    {no:1,date:45458,p1:9600,p2:9600,total:19200},{no:2,date:45488,p1:9860,p2:9860,total:19720},
+    {no:3,date:45519,p1:10120,p2:10120,total:20240},{no:4,date:45550,p1:10380,p2:10380,total:20760},
+    {no:5,date:45580,p1:10640,p2:10640,total:21280},{no:6,date:45611,p1:10900,p2:10900,total:21800},
+    {no:7,date:45641,p1:11160,p2:11160,total:22320},{no:8,date:45672,p1:11420,p2:11420,total:22840},
+    {no:9,date:45703,p1:11680,p2:11680,total:23360},{no:10,date:45731,p1:11940,p2:11940,total:23880},
+    {no:11,date:45762,p1:12200,p2:12200,total:24400},{no:12,date:45792,p1:12460,p2:12460,total:24920},
+    {no:13,date:45823,p1:12720,p2:12720,total:25440},{no:14,date:45853,p1:12980,p2:12980,total:25960},
+    {no:15,date:45884,p1:13340,p2:13340,total:26680},
+  ];
+  document.getElementById('tbl-old-johnson').innerHTML = `
+    <thead><tr><th>#</th><th>Month</th><th>2L Chitty 1</th><th>2L Chitty 2</th><th>Total (4L)</th><th>Status</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td class="mono">${r.no}</td><td>${xlDate(r.date)}</td>
+      <td class="mono">${fmt(r.p1)}</td><td class="mono">${fmt(r.p2)}</td>
+      <td class="mono" style="font-weight:700">${fmt(r.total)}</td><td>${statusBadge('Paid')}</td>
+    </tr>`).join('')}
+    <tr style="background:var(--surface2)"><td colspan="4" style="font-weight:700">Processing Fee</td><td class="mono" style="font-weight:700">₹12,000</td><td></td></tr>
+    </tbody>`;
+}
+
+function renderProperty() {
+  document.getElementById('property-grid').innerHTML = `
+    <div class="prop-card">
+      <h4>Total Property Value</h4>
+      <div class="prop-row"><span class="prop-name">Total Property</span><span class="prop-amount" style="color:var(--accent)">₹20,00,000</span></div>
+      <div class="prop-row"><span class="prop-name">Share per person (4 members)</span><span class="prop-amount">₹5,00,000</span></div>
+      <div class="prop-row"><span class="prop-name">Money gave to Manu</span><span class="prop-amount" style="color:var(--warn)">₹25,000</span></div>
+    </div>
+    <div class="prop-card">
+      <h4>Funeral & Expense Deductions</h4>
+      <div class="prop-row"><span class="prop-name">Mother's funeral — Manu</span><span class="prop-amount" style="color:var(--danger)">₹28,000</span></div>
+      <div class="prop-row"><span class="prop-name">Mother's funeral — Manoj</span><span class="prop-amount" style="color:var(--danger)">₹0</span></div>
+      <div class="prop-row"><span class="prop-name">Father's funeral total</span><span class="prop-amount" style="color:var(--danger)">₹74,310</span></div>
+      <div class="prop-row"><span class="prop-name">Father's funeral — Manoj share</span><span class="prop-amount" style="color:var(--danger)">₹7,900</span></div>
+      <div class="prop-row"><span class="prop-name">Grandmother's funeral total</span><span class="prop-amount" style="color:var(--danger)">₹90,000</span></div>
+      <div class="prop-row"><span class="prop-name">Grandmother — Manu deduction</span><span class="prop-amount" style="color:var(--danger)">₹30,000</span></div>
+      <div class="prop-row"><span class="prop-name">Grandmother — Manoj deduction</span><span class="prop-amount" style="color:var(--danger)">₹30,000</span></div>
+    </div>
+    <div class="prop-card">
+      <h4>Total Deductions per Member</h4>
+      <div class="prop-row"><span class="prop-name">Manu — total deducted</span><span class="prop-amount" style="color:var(--danger)">₹58,000</span></div>
+      <div class="prop-row"><span class="prop-name">Manoj — total deducted</span><span class="prop-amount" style="color:var(--danger)">₹37,900</span></div>
+    </div>
+    <div class="prop-card">
+      <h4>Net Share After Deductions</h4>
+      <div class="prop-row"><span class="prop-name">Manu — net share</span><span class="prop-amount" style="color:var(--accent2)">₹4,42,000</span></div>
+      <div class="prop-row"><span class="prop-name">Manoj — net share</span><span class="prop-amount" style="color:var(--accent2)">₹4,62,100</span></div>
+      <div class="prop-row" style="border-top: 2px solid var(--border);margin-top:8px;padding-top:8px">
+        <span class="prop-name" style="font-weight:700">Total to be paid</span>
+        <span class="prop-amount" style="color:var(--accent);font-size:18px">₹9,04,100</span>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// SUMMARY / KPI CARDS
+// ============================================================
+function getAggregates() {
+  const t = state.thomas, j = state.jeneesha, j26 = state.johnson26;
+
+  const tPaidCount = t.filter(r=>r.status==='Paid').length;
+  const jPaidCount = j.filter(r=>r.status==='Paid').length;
+  const j26PaidCount = j26.filter(r=>r.status==='Paid').length;
+
+  const tPaid = t.filter(r=>r.status==='Paid').reduce((s,r)=>s+r.actual,0);
+  const jPaid = j.filter(r=>r.status==='Paid').reduce((s,r)=>s+r.base,0);
+  const j26Paid = j26.filter(r=>r.status==='Paid').reduce((s,r)=>s+r.payment*2,0);
+
+  const tRemaining = t.filter(r=>r.status!=='Paid').reduce((s,r)=>s+r.actual,0);
+  const jRemaining = j.filter(r=>r.status!=='Paid').reduce((s,r)=>s+r.base,0);
+  const j26Remaining = j26.filter(r=>r.status!=='Paid').reduce((s,r)=>s+r.payment*2,0);
+
+  const totalInstallments = t.length + j.length + j26.length;
+  const paidInstallments = tPaidCount + jPaidCount + j26PaidCount;
+
+  const upcoming = [...t,...j,...j26].filter(r => r.status !== 'Paid' && daysUntil(r.date) >= 0 && daysUntil(r.date) <= 5).length;
+  const overdue = [...t,...j,...j26].filter(r => r.status !== 'Paid' && daysUntil(r.date) < 0).length;
+
+  return { tPaidCount, jPaidCount, j26PaidCount, tPaid, jPaid, j26Paid, tRemaining, jRemaining, j26Remaining,
+    totalInstallments, paidInstallments, upcoming, overdue,
+    totalPaid: tPaid + jPaid + j26Paid, totalRemaining: tRemaining + jRemaining + j26Remaining };
+}
+
+function renderSummary() {
+  const a = getAggregates();
+  const completion = Math.round((a.paidInstallments / a.totalInstallments) * 100);
+
+  document.getElementById('summary-cards').innerHTML = `
+    <div class="card gold">
+      <div class="card-label">Total Contributed</div>
+      <div class="card-value gold">${fmt(a.totalPaid)}</div>
+      <div class="card-sub">Across all active chitties</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Remaining Commitment</div>
+      <div class="card-value purple">${fmt(a.totalRemaining)}</div>
+      <div class="card-sub">${a.totalInstallments - a.paidInstallments} installments left</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Overall Completion</div>
+      <div class="card-value green">${completion}%</div>
+      <div class="card-sub">${a.paidInstallments} of ${a.totalInstallments} installments paid</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Thomas Chitty</div>
+      <div class="card-value green">${a.tPaidCount}/20 paid</div>
+      <div class="card-sub">${fmt(a.tPaid)} contributed</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Jeneesha Chitty</div>
+      <div class="card-value green">${a.jPaidCount}/20 paid</div>
+      <div class="card-sub">${fmt(a.jPaid)} contributed</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Johnson 2026-27</div>
+      <div class="card-value green">${a.j26PaidCount}/15 paid</div>
+      <div class="card-sub">${fmt(a.j26Paid)} contributed</div>
+    </div>
+    <div class="card ${a.overdue > 0 ? 'danger' : ''}">
+      <div class="card-label">Overdue</div>
+      <div class="card-value ${a.overdue > 0 ? 'red' : 'green'}">${a.overdue}</div>
+      <div class="card-sub">Past due date, unpaid</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Due Soon</div>
+      <div class="card-value orange">${a.upcoming}</div>
+      <div class="card-sub">Within the next 5 days</div>
+    </div>`;
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+let progressChart, allocationChart;
+
+function renderCharts() {
+  const a = getAggregates();
+
+  const progressCtx = document.getElementById('chart-progress');
+  const allocationCtx = document.getElementById('chart-allocation');
+
+  const chartTextColor = '#5b6685';
+  const gridColor = 'rgba(30,41,80,0.08)';
+
+  if (progressChart) progressChart.destroy();
+  progressChart = new Chart(progressCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Thomas', 'Jeneesha', 'Johnson 26-27'],
+      datasets: [
+        { label: 'Paid', data: [a.tPaid, a.jPaid, a.j26Paid], backgroundColor: '#16a34a', borderRadius: 6, stack: 's' },
+        { label: 'Remaining', data: [a.tRemaining, a.jRemaining, a.j26Remaining], backgroundColor: '#c7cfe6', borderRadius: 6, stack: 's' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: chartTextColor, font: { family: 'Inter', size: 11 } } } },
+      scales: {
+        x: { stacked: true, ticks: { color: chartTextColor, font: { family: 'Inter', size: 11 } }, grid: { color: 'transparent' } },
+        y: { stacked: true, ticks: { color: chartTextColor, font: { family: 'Inter', size: 10 }, callback: v => '₹' + (v/1000) + 'k' }, grid: { color: gridColor } }
+      }
+    }
+  });
+
+  if (allocationChart) allocationChart.destroy();
+  allocationChart = new Chart(allocationCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Thomas', 'Jeneesha', 'Johnson 26-27'],
+      datasets: [{ data: [a.tPaid, a.jPaid, a.j26Paid], backgroundColor: ['#2f5fe0', '#0ea5c8', '#c9973a'], borderColor: '#ffffff', borderWidth: 3 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: { legend: { position: 'bottom', labels: { color: chartTextColor, font: { family: 'Inter', size: 11 }, padding: 14 } } }
+    }
+  });
+}
+
+// ============================================================
+// STATUS UPDATE
+// ============================================================
+function updateStatus(dataset, idx, newStatus) {
+  getDataset(dataset)[idx].status = newStatus;
+  saveState();
+  renderAll();
+  toast(`✅ Status updated to "${newStatus}"`, 'success');
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function renderAll() {
+  renderSummary();
+  renderCharts();
+  renderThomas();
+  renderJeneesha();
+  renderTotal();
+  renderJohnson26();
+  renderOldSheela();
+  renderOldJohnson();
+  renderProperty();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('today-value').textContent = new Date().toLocaleDateString('en-IN', {weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+  renderAll();
+  setSaveStatus(storageWorks);
+  if (!FS_SUPPORTED) {
+    document.getElementById('link-file-btn').style.display = 'none';
+  } else {
+    tryRestoreLinkedFile();
+  }
+});
+</script>
+</body>
+</html>
