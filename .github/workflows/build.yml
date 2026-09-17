@@ -12,13 +12,16 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm install
-
-      - name: Add and Sync iOS
+      - name: Install Dependencies
         run: |
+          npm install
           npm run build || true
+
+      - name: Setup CocoaPods & Sync Capacitor
+        run: |
           npx cap add ios || true
           npx cap sync ios
+          cd ios/App && pod install
 
       - name: Build Xcode Archive
         run: |
@@ -26,9 +29,9 @@ jobs:
             -scheme App \
             -sdk iphoneos \
             -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
             archive -archivePath build/App.xcarchive
 
       - name: Package IPA
