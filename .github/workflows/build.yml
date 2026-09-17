@@ -4,7 +4,7 @@ on: [push, workflow_dispatch]
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 
@@ -14,11 +14,12 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm install
+          npm ci || npm install
           npm run build || true
 
-      - name: Setup CocoaPods & Sync Capacitor
+      - name: Setup Permissions, CocoaPods & Sync Capacitor
         run: |
+          chmod -R +x node_modules/.bin
           npx cap add ios || true
           npx cap sync ios
           cd ios/App && pod install
@@ -34,10 +35,10 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             archive -archivePath build/App.xcarchive
 
-      - name: Package IPA
+      - name: Export Unsigned IPA Package
         run: |
           mkdir -p build/ipa/Payload
-          cp -r build/App.xcarchive/Products/Applications/App.app build/ipa/Payload/
+          cp -r build/App.xcarchive/Products/Applications/*.app build/ipa/Payload/
           cd build/ipa
           zip -r chitty-app.ipa Payload
 
